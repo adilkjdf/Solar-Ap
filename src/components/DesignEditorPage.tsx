@@ -8,7 +8,6 @@ import { ArrowLeft, ChevronDown } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import { LatLngTuple } from 'leaflet';
 import { supabase } from '../integrations/supabase/client';
-import { MapRotate } from 'react-leaflet-rotate';
 
 interface DesignEditorPageProps {
   project: ProjectData;
@@ -229,8 +228,6 @@ const DesignEditorPage: React.FC<DesignEditorPageProps> = ({ project, design, on
                 onSelect={() => setSelectedSegment(segment)}
               />
             ))}
-
-            {selectedMapType === 'maptalk-satellite' && <MapRotate position="topright" />}
         </MapContainer>
       </div>
     </div>
