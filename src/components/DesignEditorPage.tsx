@@ -8,6 +8,7 @@ import { ArrowLeft, ChevronDown } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import { LatLngTuple } from 'leaflet';
 import { supabase } from '../integrations/supabase/client';
+import MapTiler3DViewer from './MapTiler3DViewer';
 
 interface DesignEditorPageProps {
   project: ProjectData;
@@ -51,6 +52,8 @@ const DesignEditorPage: React.FC<DesignEditorPageProps> = ({ project, design, on
   const [selectedMapType, setSelectedMapType] = useState('maptiler-satellite');
   const [isMapDropdownOpen, setIsMapDropdownOpen] = useState(false);
 
+  const is3DView = selectedMapType === 'maptalk-satellite';
+
   useEffect(() => {
     setFieldSegments(design.field_segments || []);
   }, [design]);
@@ -80,6 +83,10 @@ const DesignEditorPage: React.FC<DesignEditorPageProps> = ({ project, design, on
   };
 
   const handleStartDrawing = () => {
+    if (is3DView) {
+      alert("Drawing is not supported in the 3D view. Please switch to a 2D map to create or edit field segments.");
+      return;
+    }
     setIsDrawing(true);
     setSelectedSegment(null);
     setDrawingPoints([]);
@@ -165,6 +172,7 @@ const DesignEditorPage: React.FC<DesignEditorPageProps> = ({ project, design, on
         onSelectSegment={setSelectedSegment}
         onUpdateSegment={handleUpdateSegment}
         onDeleteSegment={handleDeleteSegment}
+        isDrawingDisabled={is3DView}
       />
       <div className="flex-1 relative">
         <div className="absolute top-0 left-0 z-[1000] p-4">
@@ -200,35 +208,44 @@ const DesignEditorPage: React.FC<DesignEditorPageProps> = ({ project, design, on
           </div>
         </div>
         
-        <MapContainer center={mapCenter} zoom={19} maxZoom={24} className="h-full w-full" scrollWheelZoom={true} doubleClickZoom={false}>
-          <TileLayer 
-            url={currentMapOption.url} 
-            attribution={getMapAttribution(selectedMapType)} 
-            maxNativeZoom={20} 
-            maxZoom={24} 
-            key={selectedMapType}
+        {is3DView ? (
+          <MapTiler3DViewer
+            project={project}
+            fieldSegments={fieldSegments}
+            selectedSegment={selectedSegment}
+            onSelectSegment={setSelectedSegment}
           />
-            <MapResizer isSidebarOpen={isSidebarOpen} />
-            
-            {isDrawing && (
-              <MapDrawingLayer 
-                points={drawingPoints} 
-                onPointsChange={setDrawingPoints} 
-                onShapeComplete={handleStopDrawing}
-                onAreaChange={setDrawingArea}
-              />
-            )}
+        ) : (
+          <MapContainer center={mapCenter} zoom={19} maxZoom={24} className="h-full w-full" scrollWheelZoom={true} doubleClickZoom={false}>
+            <TileLayer 
+              url={currentMapOption.url} 
+              attribution={getMapAttribution(selectedMapType)} 
+              maxNativeZoom={20} 
+              maxZoom={24} 
+              key={selectedMapType}
+            />
+              <MapResizer isSidebarOpen={isSidebarOpen} />
+              
+              {isDrawing && (
+                <MapDrawingLayer 
+                  points={drawingPoints} 
+                  onPointsChange={setDrawingPoints} 
+                  onShapeComplete={handleStopDrawing}
+                  onAreaChange={setDrawingArea}
+                />
+              )}
 
-            {fieldSegments.map(segment => (
-              <FieldSegmentLayer 
-                key={segment.id} 
-                segment={segment} 
-                modules={modules} 
-                onUpdate={handleUpdateSegment}
-                onSelect={() => setSelectedSegment(segment)}
-              />
-            ))}
-        </MapContainer>
+              {fieldSegments.map(segment => (
+                <FieldSegmentLayer 
+                  key={segment.id} 
+                  segment={segment} 
+                  modules={modules} 
+                  onUpdate={handleUpdateSegment}
+                  onSelect={() => setSelectedSegment(segment)}
+                />
+              ))}
+          </MapContainer>
+        )}
       </div>
     </div>
   );
