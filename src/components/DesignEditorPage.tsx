@@ -51,7 +51,7 @@ const DesignEditorPage: React.FC<DesignEditorPageProps> = ({ project, design, on
   const [fieldSegments, setFieldSegments] = useState<FieldSegment[]>([]);
   const [selectedSegment, setSelectedSegment] = useState<FieldSegment | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
-  const [selectedMapType, setSelectedMapType] = useState('maptiler-satellite');
+  const [selectedMapType, setSelectedMapType] = useState('google-satellite-2d');
   const [isMapDropdownOpen, setIsMapDropdownOpen] = useState(false);
 
   const isMaptalksView = selectedMapType === 'google-satellite-3d';
