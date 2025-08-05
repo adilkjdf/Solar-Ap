@@ -244,6 +244,7 @@ const DesignEditorPage: React.FC<DesignEditorPageProps> = ({ project, design, on
                   modules={modules} 
                   onUpdate={handleUpdateSegment}
                   onSelect={() => setSelectedSegment(segment)}
+                  is3DView={selectedMapType.includes('3d')}
                 />
               ))}
           </MapContainer>

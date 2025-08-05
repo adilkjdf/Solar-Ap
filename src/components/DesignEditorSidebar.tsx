@@ -122,11 +122,33 @@ const DesignEditorSidebar: React.FC<DesignEditorSidebarProps> = ({
           <SelectField label="Racking" id="seg-racking" value={editedSegment.rackingType || ''} onChange={val => handleFieldChange({ rackingType: val as any })} options={rackingOptions} />
           
           <div className="grid grid-cols-2 gap-4">
-            <FormField label="Surface Height" id="seg-surf-h" type="number" value={editedSegment.surfaceHeight || 0} onChange={val => handleFieldChange({ surfaceHeight: parseFloat(val) })} />
+            <FormField 
+              label="Surface Height (ft)" 
+              id="seg-surf-h" 
+              type="number" 
+              value={editedSegment.surfaceHeight || 0} 
+              onChange={val => handleFieldChange({ surfaceHeight: parseFloat(val) })}
+              min={0}
+              max={200}
+              step={0.1}
+            />
             <FormField label="Racking Height" id="seg-rack-h" type="number" value={editedSegment.rackingHeight || 0} onChange={val => handleFieldChange({ rackingHeight: parseFloat(val) })} />
             <FormField label="Module Azimuth" id="seg-azimuth" type="number" value={editedSegment.azimuth} onChange={val => handleFieldChange({ azimuth: parseFloat(val) })} />
             <FormField label="Module Tilt" id="seg-tilt" type="number" value={editedSegment.moduleTilt || 0} onChange={val => handleFieldChange({ moduleTilt: parseFloat(val) })} />
           </div>
+          
+          {editedSegment.surfaceHeight && editedSegment.surfaceHeight > 0 && (
+            <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center space-x-2 text-sm text-blue-700">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="font-medium">3D Building Mode Active</span>
+              </div>
+              <p className="text-xs text-blue-600 mt-1">
+                Building height: {editedSegment.surfaceHeight.toFixed(1)} ft above ground level
+              </p>
+            </div>
+          )}
+          
           <a href="#" className="text-blue-600 text-xs">+ Add Independent Tilt</a>
 
           <div className="p-3 bg-gray-50 rounded-lg border mt-4">

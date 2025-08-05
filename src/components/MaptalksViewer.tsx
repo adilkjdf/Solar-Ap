@@ -58,19 +58,70 @@ const MaptalksViewer: React.FC<MaptalksViewerProps> = ({
 
     fieldSegments.forEach(segment => {
       const segmentCoords = segment.points.map(p => [p[1], p[0]]);
-      const polygon = new maptalks.Polygon([segmentCoords], {
-        id: segment.id,
-        symbol: {
-          lineColor: '#ca8a04',
-          lineWidth: 2,
-          polygonFill: '#f97316',
-          polygonOpacity: segment.id === selectedSegment?.id ? 0.4 : 0.2,
-        },
-      });
+      const surfaceHeight = (segment.surfaceHeight || 0) * 0.3048; // Convert feet to meters
+      
+      // Create 3D building base
+      if (surfaceHeight > 0) {
+        const buildingBase = new maptalks.Polygon([segmentCoords], {
+          id: `${segment.id}-base`,
+          symbol: {
+            lineColor: '#8b4513',
+            lineWidth: 2,
+            polygonFill: '#d2691e',
+            polygonOpacity: 0.6,
+          },
+        });
+        geometries.push(buildingBase);
+        
+        // Create extruded building
+        const building = new maptalks.Polygon([segmentCoords], {
+          id: `${segment.id}-building`,
+          symbol: {
+            lineColor: '#fbbf24',
+            lineWidth: 3,
+            polygonFill: '#fef3c7',
+            polygonOpacity: 0.8,
+          },
+          properties: {
+            height: surfaceHeight,
+          },
+        });
+        
+        // Set the height for 3D extrusion
+        building.setProperties({ height: surfaceHeight });
+        building.on('click', () => onSelectSegment(segment));
+        geometries.push(building);
+        
+        // Add height labels
+        const center = building.getCenter();
+        const heightLabel = new maptalks.Marker(center, {
+          id: `${segment.id}-height-label`,
+          symbol: {
+            textName: `${segment.surfaceHeight?.toFixed(1) || 0} ft`,
+            textSize: 12,
+            textFill: '#000',
+            textHaloFill: '#fff',
+            textHaloRadius: 2,
+            textDy: -10,
+          },
+        });
+        geometries.push(heightLabel);
+      } else {
+        // Ground level polygon
+        const polygon = new maptalks.Polygon([segmentCoords], {
+          id: segment.id,
+          symbol: {
+            lineColor: '#ca8a04',
+            lineWidth: 2,
+            polygonFill: '#f97316',
+            polygonOpacity: segment.id === selectedSegment?.id ? 0.4 : 0.2,
+          },
+        });
+        polygon.on('click', () => onSelectSegment(segment));
+        geometries.push(polygon);
+      }
 
-      polygon.on('click', () => onSelectSegment(segment));
-      geometries.push(polygon);
-
+      // Add solar modules on the rooftop
       if (segment.moduleLayout) {
         segment.moduleLayout.forEach((modulePolygonPoints, i) => {
           const moduleCoords = modulePolygonPoints.map(p => [p[1], p[0]]);
@@ -82,7 +133,16 @@ const MaptalksViewer: React.FC<MaptalksViewerProps> = ({
               polygonFill: '#3b82f6',
               polygonOpacity: 0.8,
             },
+            properties: {
+              height: surfaceHeight + 0.1, // Slightly above the building surface
+            },
           });
+          
+          // Set module height for 3D visualization
+          if (surfaceHeight > 0) {
+            modulePolygon.setProperties({ height: surfaceHeight + 0.1 });
+          }
+          
           geometries.push(modulePolygon);
         });
       }
