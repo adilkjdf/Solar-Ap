@@ -21,7 +21,8 @@ const MAPTILER_API_KEY = 'aTChQEvBqKVcP0AXd2bH';
 const MAP_OPTIONS = [
   { value: 'maptiler-satellite', label: 'MapTiler Satellite', url: `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${MAPTILER_API_KEY}` },
   { value: 'maptiler-streets', label: 'MapTiler Streets', url: `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${MAPTILER_API_KEY}` },
-  { value: 'maptalk-satellite', label: 'MapTalk Satellite (High Resolution)', url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}' },
+  { value: 'google-satellite-2d', label: 'Google Satellite (2D High-Res)', url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}' },
+  { value: 'google-satellite-3d', label: 'Google Satellite (3D View)', url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}' },
   { value: 'maptalk-hybrid', label: 'MapTalk Hybrid (Latest View)', url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}' },
   { value: 'maptalk-terrain', label: 'MapTalk Terrain (Advanced)', url: 'https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}' },
   { value: 'maptalk-streets', label: 'MapTalk Streets', url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}' },
@@ -29,7 +30,7 @@ const MAP_OPTIONS = [
 
 const getMapAttribution = (mapType: string) => {
   if (mapType.startsWith('maptiler')) return '&copy; <a href="https://www.maptiler.com/copyright/" target="_blank">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors';
-  if (mapType.startsWith('maptalk')) return '&copy; Google Maps';
+  if (mapType.startsWith('google') || mapType.startsWith('maptalk')) return '&copy; Google Maps';
   return '';
 };
 
@@ -53,7 +54,7 @@ const DesignEditorPage: React.FC<DesignEditorPageProps> = ({ project, design, on
   const [selectedMapType, setSelectedMapType] = useState('maptiler-satellite');
   const [isMapDropdownOpen, setIsMapDropdownOpen] = useState(false);
 
-  const isMaptalksView = selectedMapType === 'maptalk-satellite';
+  const isMaptalksView = selectedMapType === 'google-satellite-3d';
 
   useEffect(() => {
     setFieldSegments(design.field_segments || []);
