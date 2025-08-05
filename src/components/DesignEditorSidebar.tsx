@@ -20,7 +20,6 @@ interface DesignEditorSidebarProps {
   onSelectSegment: (segment: FieldSegment | null) => void;
   onUpdateSegment: (id: string, updates: Partial<FieldSegment>) => void;
   onDeleteSegment: (id:string) => void;
-  isDrawingDisabled?: boolean;
 }
 
 const FEET_PER_METER = 3.28084;
@@ -40,7 +39,6 @@ const DesignEditorSidebar: React.FC<DesignEditorSidebarProps> = ({
   onSelectSegment,
   onUpdateSegment,
   onDeleteSegment,
-  isDrawingDisabled = false
 }) => {
   const moduleOptions = modules.map(m => ({ value: m.id, label: `${m.manufacturer} ${m.model_name}` }));
   const orientationOptions = [{ value: 'Landscape', label: 'Landscape (Horizontal)' }, { value: 'Portrait', label: 'Portrait (Vertical)' }];
@@ -167,9 +165,7 @@ const DesignEditorSidebar: React.FC<DesignEditorSidebarProps> = ({
           <h3 className="font-semibold text-gray-800">Field Segments</h3>
           <button 
             onClick={onStartDrawing} 
-            className="px-3 py-1 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300 flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isDrawingDisabled}
-            title={isDrawingDisabled ? "Switch to a 2D map to add a new segment" : "Create a new field segment"}
+            className="px-3 py-1 bg-gray-200 text-gray-800 rounded-md text-sm font-semibold hover:bg-gray-300 flex items-center space-x-1"
           >
             <Plus className="w-4 h-4" />
             <span>New</span>
