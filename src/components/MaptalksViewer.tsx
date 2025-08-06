@@ -62,37 +62,71 @@ const MaptalksViewer: React.FC<MaptalksViewerProps> = ({
       
       // Create proper 3D extruded building
       if (surfaceHeight > 0) {
-        // Create the extruded building polygon
+        // Create the main extruded building with all sides colored
         const extrudedBuilding = new maptalks.Polygon([segmentCoords], {
           id: `${segment.id}-building`,
           symbol: {
-            lineColor: '#8b4513',
+            // Building outline
+            lineColor: '#654321',
             lineWidth: 2,
-            polygonFill: '#d2b48c',
-            polygonOpacity: 0.8,
-            // 3D extrusion properties
+            // Top surface (rooftop)
+            polygonFill: '#daa520',
+            polygonOpacity: 0.9,
+            // 3D extrusion properties for all sides
             extrudeHeight: surfaceHeight,
-            extrudeFill: '#daa520',
+            // Building walls - main color
+            extrudeFill: '#cd853f',
             extrudeOpacity: 0.9,
-            extrudeLineColor: '#8b4513',
-            extrudeLineWidth: 1,
+            extrudeLineColor: '#654321',
+            extrudeLineWidth: 2,
+            // Shadow and lighting effects
+            extrudeShadow: true,
+            extrudeShadowColor: 'rgba(0,0,0,0.4)',
+            extrudeShadowBlur: 10,
+            // Side face colors for realistic appearance
+            extrudeFaces: [
+              { fill: '#d2b48c', opacity: 0.8 }, // North face (lighter)
+              { fill: '#bc9a6a', opacity: 0.9 }, // East face (medium)
+              { fill: '#a0845c', opacity: 0.95 }, // South face (darker)
+              { fill: '#8b7355', opacity: 0.9 }  // West face (medium-dark)
+            ]
           },
         });
         
         // Enable 3D extrusion
         extrudedBuilding.config('enableAltitude', true);
-        extrudedBuilding.setAltitude(0, surfaceHeight);
+        extrudedBuilding.setAltitude(0);
         extrudedBuilding.on('click', () => onSelectSegment(segment));
         geometries.push(extrudedBuilding);
         
-        // Create rooftop surface at the building height
+        // Add shadow polygon on ground
+        const shadowOffset = surfaceHeight * 0.5; // Shadow length based on height
+        const shadowCoords = segmentCoords.map(coord => [
+          coord[0] + shadowOffset * 0.0001, // Offset shadow eastward
+          coord[1] - shadowOffset * 0.0001  // Offset shadow southward
+        ]);
+        
+        const buildingShadow = new maptalks.Polygon([shadowCoords], {
+          id: `${segment.id}-shadow`,
+          symbol: {
+            lineColor: 'transparent',
+            lineWidth: 0,
+            polygonFill: '#000000',
+            polygonOpacity: 0.3,
+          },
+        });
+        buildingShadow.config('enableAltitude', true);
+        buildingShadow.setAltitude(0.1); // Slightly above ground
+        geometries.push(buildingShadow);
+        
+        // Create elevated rooftop surface for solar panels
         const rooftop = new maptalks.Polygon([segmentCoords], {
           id: `${segment.id}-rooftop`,
           symbol: {
-            lineColor: '#fbbf24',
-            lineWidth: 2,
-            polygonFill: '#fef3c7',
-            polygonOpacity: 0.7,
+            lineColor: '#f59e0b',
+            lineWidth: 1,
+            polygonFill: '#fbbf24',
+            polygonOpacity: 0.8,
           },
         });
         
@@ -101,6 +135,28 @@ const MaptalksViewer: React.FC<MaptalksViewerProps> = ({
         rooftop.setAltitude(surfaceHeight);
         rooftop.on('click', () => onSelectSegment(segment));
         geometries.push(rooftop);
+        
+        // Add racking structure if racking height is specified
+        if (rackingHeight > 0) {
+          const rackingStructure = new maptalks.Polygon([segmentCoords], {
+            id: `${segment.id}-racking`,
+            symbol: {
+              lineColor: '#6b7280',
+              lineWidth: 1,
+              polygonFill: 'transparent',
+              polygonOpacity: 0,
+              // Racking frame visualization
+              extrudeHeight: rackingHeight,
+              extrudeFill: '#9ca3af',
+              extrudeOpacity: 0.6,
+              extrudeLineColor: '#6b7280',
+              extrudeLineWidth: 1,
+            },
+          });
+          rackingStructure.config('enableAltitude', true);
+          rackingStructure.setAltitude(surfaceHeight);
+          geometries.push(rackingStructure);
+        }
         
         // Add height labels at multiple positions
         const bounds = new maptalks.Polygon([segmentCoords]).getExtent();
@@ -113,19 +169,29 @@ const MaptalksViewer: React.FC<MaptalksViewerProps> = ({
         
         corners.forEach((corner, index) => {
           if (index % 2 === 0) { // Show on alternate corners to avoid clutter
+            const displayHeight = rackingHeight > 0 
+              ? `${((surfaceHeight + rackingHeight) / 0.3048).toFixed(1)} ft` 
+              : `${(surfaceHeight / 0.3048).toFixed(1)} ft`;
+              
             const heightLabel = new maptalks.Marker(corner, {
               id: `${segment.id}-height-label-${index}`,
               symbol: {
-                textName: `${segment.surfaceHeight?.toFixed(1) || 0} ft`,
-                textSize: 10,
-                textFill: '#000',
+                textName: displayHeight,
+                textSize: 12,
+                textFill: '#ffffff',
                 textHaloFill: '#fff',
-                textHaloRadius: 2,
-                textDy: -5,
+                textHaloRadius: 3,
+                textDy: -8,
+                textWeight: 'bold',
+                // Add background box for better visibility
+                markerType: 'ellipse',
+                markerFill: 'rgba(0,0,0,0.7)',
+                markerWidth: 60,
+                markerHeight: 20,
               },
             });
             heightLabel.config('enableAltitude', true);
-            heightLabel.setAltitude(surfaceHeight + 2); // Slightly above rooftop
+            heightLabel.setAltitude(totalHeight + 3); // Above everything
             geometries.push(heightLabel);
           }
         });
