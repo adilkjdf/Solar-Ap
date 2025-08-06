@@ -60,55 +60,78 @@ const MaptalksViewer: React.FC<MaptalksViewerProps> = ({
       const segmentCoords = segment.points.map(p => [p[1], p[0]]);
       const surfaceHeight = (segment.surfaceHeight || 0) * 0.3048; // Convert feet to meters
       
-      // Create 3D building base
+      // Create proper 3D extruded building
       if (surfaceHeight > 0) {
-        const buildingBase = new maptalks.Polygon([segmentCoords], {
-          id: `${segment.id}-base`,
+        // Create the extruded building polygon
+        const extrudedBuilding = new maptalks.Polygon([segmentCoords], {
+          id: `${segment.id}-building`,
           symbol: {
             lineColor: '#8b4513',
             lineWidth: 2,
-            polygonFill: '#d2691e',
-            polygonOpacity: 0.6,
+            polygonFill: '#d2b48c',
+            polygonOpacity: 0.8,
+            // 3D extrusion properties
+            extrudeHeight: surfaceHeight,
+            extrudeFill: '#daa520',
+            extrudeOpacity: 0.9,
+            extrudeLineColor: '#8b4513',
+            extrudeLineWidth: 1,
           },
         });
-        geometries.push(buildingBase);
         
-        // Create extruded building
-        const building = new maptalks.Polygon([segmentCoords], {
-          id: `${segment.id}-building`,
+        // Enable 3D extrusion
+        extrudedBuilding.config('enableAltitude', true);
+        extrudedBuilding.setAltitude(0, surfaceHeight);
+        extrudedBuilding.on('click', () => onSelectSegment(segment));
+        geometries.push(extrudedBuilding);
+        
+        // Create rooftop surface at the building height
+        const rooftop = new maptalks.Polygon([segmentCoords], {
+          id: `${segment.id}-rooftop`,
           symbol: {
             lineColor: '#fbbf24',
-            lineWidth: 3,
+            lineWidth: 2,
             polygonFill: '#fef3c7',
-            polygonOpacity: 0.8,
-          },
-          properties: {
-            height: surfaceHeight,
+            polygonOpacity: 0.7,
           },
         });
         
-        // Set the height for 3D extrusion
-        building.setProperties({ height: surfaceHeight });
-        building.on('click', () => onSelectSegment(segment));
-        geometries.push(building);
+        // Position rooftop at building height
+        rooftop.config('enableAltitude', true);
+        rooftop.setAltitude(surfaceHeight);
+        rooftop.on('click', () => onSelectSegment(segment));
+        geometries.push(rooftop);
         
-        // Add height labels
-        const center = building.getCenter();
-        const heightLabel = new maptalks.Marker(center, {
-          id: `${segment.id}-height-label`,
-          symbol: {
-            textName: `${segment.surfaceHeight?.toFixed(1) || 0} ft`,
-            textSize: 12,
-            textFill: '#000',
-            textHaloFill: '#fff',
-            textHaloRadius: 2,
-            textDy: -10,
-          },
+        // Add height labels at multiple positions
+        const bounds = new maptalks.Polygon([segmentCoords]).getExtent();
+        const corners = [
+          [bounds.xmin, bounds.ymin],
+          [bounds.xmax, bounds.ymin],
+          [bounds.xmax, bounds.ymax],
+          [bounds.xmin, bounds.ymax]
+        ];
+        
+        corners.forEach((corner, index) => {
+          if (index % 2 === 0) { // Show on alternate corners to avoid clutter
+            const heightLabel = new maptalks.Marker(corner, {
+              id: `${segment.id}-height-label-${index}`,
+              symbol: {
+                textName: `${segment.surfaceHeight?.toFixed(1) || 0} ft`,
+                textSize: 10,
+                textFill: '#000',
+                textHaloFill: '#fff',
+                textHaloRadius: 2,
+                textDy: -5,
+              },
+            });
+            heightLabel.config('enableAltitude', true);
+            heightLabel.setAltitude(surfaceHeight + 2); // Slightly above rooftop
+            geometries.push(heightLabel);
+          }
         });
-        geometries.push(heightLabel);
       } else {
-        // Ground level polygon
-        const polygon = new maptalks.Polygon([segmentCoords], {
+        // Ground level polygon for segments without height
+        const groundPolygon = new maptalks.Polygon([segmentCoords], {
           id: segment.id,
           symbol: {
             lineColor: '#ca8a04',
@@ -117,8 +140,8 @@ const MaptalksViewer: React.FC<MaptalksViewerProps> = ({
             polygonOpacity: segment.id === selectedSegment?.id ? 0.4 : 0.2,
           },
         });
-        polygon.on('click', () => onSelectSegment(segment));
-        geometries.push(polygon);
+        groundPolygon.on('click', () => onSelectSegment(segment));
+        geometries.push(groundPolygon);
       }
 
       // Add solar modules on the rooftop
@@ -133,14 +156,12 @@ const MaptalksViewer: React.FC<MaptalksViewerProps> = ({
               polygonFill: '#3b82f6',
               polygonOpacity: 0.8,
             },
-            properties: {
-              height: surfaceHeight + 0.1, // Slightly above the building surface
-            },
           });
           
-          // Set module height for 3D visualization
+          // Position modules on the rooftop surface
           if (surfaceHeight > 0) {
-            modulePolygon.setProperties({ height: surfaceHeight + 0.1 });
+            modulePolygon.config('enableAltitude', true);
+            modulePolygon.setAltitude(surfaceHeight + 0.1); // Slightly above rooftop
           }
           
           geometries.push(modulePolygon);
